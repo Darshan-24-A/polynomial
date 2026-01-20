@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Polynomial Calculator with Steps + Value Evaluation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  background: linear-gradient(to right,#4facfe,#00f2fe);
+  min-height: 100vh;
+  margin: 0;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.wrapper {
+  display:flex;
+  gap:20px;
+  width:100%;
+  max-width:1200px;
+}
+
+.panel,.steps-panel {
+  background:white;
+  border-radius:12px;
+  padding:20px;
+  box-shadow:0 10px 25px rgba(16, 16, 16, 0.2);
+}
+
+.panel { width:45%; }
+.steps-panel { width:55%; max-height:80vh; overflow:auto; }
+
+h2,h3 { color:#2c3e50 }
+
+input {
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-family: monospace;
+}
+
+label { margin-top:10px; display:block; font-weight:bold }
+
+button {
+  width:48%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.add { background:#667eea }
+.sub { background:#f5576c }
+
+.result {
+  background:#f1fefe;
+  padding:10px;
+  margin-top:15px;
+  border-radius:8px;
+  font-family:monospace;
+  font-size:18px;
+}
+
+.step {
+  background:#f7fbff;
+  padding:12px;
+  margin-bottom:10px;
+  border-left:5px solid #667eea;
+  border-radius:8px;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  font-family:monospace;
+}
+
+td,th {
+  border:1px solid #ddd;
+  padding:6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+<!-- LEFT PANEL -->
+<div class="panel">
+<h2>Polynomial Calculator</h2>
+
+<label>Polynomial 1</label>
+<input id="p1" value="4x^2 + 3x - 5">
+
+<label>Polynomial 2</label>
+<input id="p2" value="2x^2 - x + 10">
+
+<label>Assign Variable Values</label>
+<input id="values" placeholder="x=2, y=3,z=4">
+
+<div style="margin-top:15px; display:flex; justify-content:space-between;">
+<button class="add" onclick="solve('add')">+ Add</button>
+<button class="sub" onclick="solve('sub')">- Subtract</button>
+</div>
+
+<div class="result">
+<b>Symbolic Result:</b><br>
+<span id="symbolic">—</span><br><br>
+<b>Final Numeric Value:</b><br>
+<span id="numeric">—</span>
+</div>
+
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="steps-panel">
+<h3>Step-by-Step Visualization</h3>
+<div id="steps"></div>
+</div>
+
+</div>
+
+<script>
+function parsePolynomial(str){
+  let terms = {};
+  str = str.replace(/\s+/g,'');
+  let parts = str.split(/(?=[+-])/);
+
+  parts.forEach(part=>{
+    if(!part) return;
+    let coefMatch = part.match(/^([+-]?\d*)/);
+    let coef = coefMatch[1];
+    if(coef=="" || coef=="+") coef=1;
+    else if(coef=="-") coef=-1;
+    else coef=parseInt(coef);
+
+    let vars = part.match(/[a-z]\^?\d*/g) || [];
+    let key = vars.length ? vars.join('*') : "const";
+    terms[key]=(terms[key]||0)+coef;
+  });
+
+  return terms;
+}
+
+function format(terms){
+  let out="";
+  for(let k in terms){
+    let c = terms[k];
+    if(c==0) continue;
+    out += (c>0 && out!==""? " + ":"");
+    out += (k=="const") ? c : (c==1?"":c)+k.replace("*","");
+  }
+  return out || "0";
+}
+
+function evaluate(poly, values){
+  let sum=0;
+  for(let k in poly){
+    let v=poly[k];
+    if(k=="const"){ sum+=v; continue; }
+    let val=v;
+    k.split("*").forEach(term=>{
+      let [x,p]=term.split("^");
+      let power=p?parseInt(p):1;
+      val *= Math.pow(values[x]||0,power);
+    });
+    sum+=val;
+  }
+  return sum;
+}
+
+function solve(type){
+  let p1 = document.getElementById("p1").value;
+  let p2 = document.getElementById("p2").value;
+  let vals = document.getElementById("values").value;
+  let steps = document.getElementById("steps");
+  steps.innerHTML="";
+
+  // 🔥 INVALID INPUT CHECK
+  if (!p1.trim() || !p2.trim() || p1.trim() === "0" || p2.trim() === "0") {
+      document.getElementById("symbolic").innerText = "Invalid Input";
+      document.getElementById("numeric").innerText = "Invalid Input";
+      steps.innerHTML = "<div class='step'><b>Error:</b> Polynomial cannot be empty or zero.</div>";
+      return;
+  }
+
+  let t1 = parsePolynomial(p1);
+  let t2 = parsePolynomial(p2);
+
+  steps.innerHTML += `<div class='step'><b>Step 1:</b> Tokenized Polynomials</div>`;
+
+  let all = new Set([...Object.keys(t1),...Object.keys(t2)]);
+  let res = {};
+
+  all.forEach(k=>{
+    res[k]= type=="add" ? (t1[k]||0)+(t2[k]||0) : (t1[k]||0)-(t2[k]||0);
+    steps.innerHTML += `<div class='step'>${k}: ${t1[k]||0} ${type=="add"?"+":"-"} ${t2[k]||0} = <b>${res[k]}</b></div>`;
+  });
+
+  let symbolic = format(res);
+  document.getElementById("symbolic").innerText=symbolic;
+
+  let values={};
+  vals.split(",").forEach(p=>{
+    let [k,v]=p.split("=");
+    if(k) values[k.trim()]=parseFloat(v);
+  });
+
+  let numeric=evaluate(res,values);
+  document.getElementById("numeric").innerText=numeric;
+}
+</script>
+
+</body>
+</html>

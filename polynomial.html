@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Polynomial Calculator + C Code Viewer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  background: linear-gradient(to right,#bdbd5d,#15d404);
+  min-height:100vh;
+  margin:0;
+  padding:20px;
+  font-family:Arial, sans-serif;
+}
+.main{max-width:1200px;margin:auto;}
+.wrapper{display:flex;gap:20px;}
+
+.panel,.steps-panel,.editor-card{
+  background:#fff;
+  border-radius:12px;
+  padding:20px;
+  box-shadow:0 10px 25px rgba(0,0,0,.2);
+}
+.panel{width:45%;}
+.steps-panel{width:55%;max-height:80vh;overflow:auto;}
+
+h2,h3{margin-top:0;color:#2c3e50;}
+
+input{
+  width:100%;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  font-family:monospace;
+}
+label{font-weight:bold;margin-top:10px;display:block;}
+
+button{
+  width:48%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  color:#fff;
+  font-weight:bold;
+  cursor:pointer;
+}
+.add{background:#667eea;}
+.sub{background:#f5576c;}
+
+.result{
+  margin-top:15px;
+  padding:10px;
+  background:#f1fefe;
+  border-radius:8px;
+  font-family:monospace;
+}
+
+.step{
+  background:#f7fbff;
+  padding:10px;
+  margin-bottom:10px;
+  border-left:5px solid #667eea;
+  border-radius:8px;
+}
+
+/* CODE VIEWER */
+.editor-card{margin-top:30px;}
+.editor-header{
+  background:#1e1e1e;
+  color:#fff;
+  padding:10px;
+  border-radius:8px 8px 0 0;
+  font-family:monospace;
+}
+.editor-container{
+  height:350px;
+  background:#1e1e1e;
+  overflow:auto;
+  border-radius:0 0 8px 8px;
+}
+code{
+  display:block;
+  padding:20px;
+  color:#d4d4d4;
+  font-family:Consolas, monospace;
+  white-space:pre;
+}
+</style>
+</head>
+
+<body>
+<div class="main">
+
+<div class="wrapper">
+<div class="panel">
+<h2>Polynomial Calculator</h2>
+
+<label>Polynomial 1</label>
+<input id="p1" value="3x^2y + 2yz - 5">
+
+<label>Polynomial 2</label>
+<input id="p2" value="x^2y - 2yz + 10">
+
+<label>Assign Variable Values</label>
+<input id="values" value="x=2,y=3,z=1">
+
+<div style="margin-top:15px;display:flex;justify-content:space-between;">
+<button class="add" onclick="solve('add')">+ Add</button>
+<button class="sub" onclick="solve('sub')">- Subtract</button>
+</div>
+
+<div class="result">
+<b>Symbolic Result:</b><br>
+<span id="symbolic">—</span><br><br>
+<b>Final Numeric Value:</b><br>
+<span id="numeric">—</span>
+</div>
+</div>
+
+<div class="steps-panel">
+<h3>Step-by-Step Visualization</h3>
+<div id="steps"></div>
+</div>
+</div>
+
+<div class="editor-card">
+<h3>C Program: Polynomial Addition ( Singly Circular Linked List)</h3>
+<div class="editor-header">Polynomial Addition</div>
+<div class="editor-container">
+<code>
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;math.h&gt;
+
+struct poly
+{
+    int cf, px, py, pz;
+    int flag;
+    struct poly *next;
+};
+
+typedef struct poly node;
+
+/* Allocate memory */
+node* getnode()
+{
+    node *nn;
+    nn = (node*)malloc(sizeof(node));
+
+    if (nn == NULL)
+    {
+        printf("Insufficient memory\n");
+        exit(0);
+    }
+    return nn;
+}
+
+/* Display polynomial */
+void display(node *head)
+{
+    node *p;
+
+    if (head->next == head)
+    {
+        printf("Polynomial does not exist\n");
+        return;
+    }
+
+    p = head->next;
+    while (p != head)
+    {
+        printf("%dx^%dy^%dz^%d", p->cf, p->px, p->py, p->pz);
+        if (p->next != head)
+            printf(" + ");
+        p = p->next;
+    }
+}
+
+/* Insert node at rear */
+node* insert_rear(int cf, int x, int y, int z, node *head)
+{
+    node *p, *v;
+    p = getnode();
+
+    p->cf = cf;
+    p->px = x;
+    p->py = y;
+    p->pz = z;
+    p->flag = 0;
+
+    v = head;
+    while (v->next != head)
+        v = v->next;
+
+    v->next = p;
+    p->next = head;
+
+    return head;
+}
+
+/* Read polynomial */
+node* read_poly(node *head)
+{
+    int px, py, pz, cf, ch;
+
+    do
+    {
+        printf("Enter coefficient: ");
+        scanf("%d", &cf);
+
+        printf("Enter powers of x, y, z: ");
+        scanf("%d%d%d", &px, &py, &pz);
+
+        head = insert_rear(cf, px, py, pz, head);
+
+        printf("Press 1 to continue, 0 to stop: ");
+        scanf("%d", &ch);
+
+    } while (ch != 0);
+
+    return head;
+}
+
+/* Add two polynomials */
+node* add_poly(node *h1, node *h2, node *h3)
+{
+    node *p1, *p2;
+    int cf;
+
+    p1 = h1->next;
+    while (p1 != h1)
+    {
+        p2 = h2->next;
+        while (p2 != h2)
+        {
+            if (p1->px == p2->px &&
+                p1->py == p2->py &&
+                p1->pz == p2->pz)
+                break;
+
+            p2 = p2->next;
+        }
+
+        if (p2 != h2)
+        {
+            cf = p1->cf + p2->cf;
+            p2->flag = 1;
+
+            if (cf != 0)
+                h3 = insert_rear(cf, p1->px, p1->py, p1->pz, h3);
+        }
+        else
+        {
+            h3 = insert_rear(p1->cf, p1->px, p1->py, p1->pz, h3);
+        }
+        p1 = p1->next;
+    }
+
+    p2 = h2->next;
+    while (p2 != h2)
+    {
+        if (p2->flag == 0)
+            h3 = insert_rear(p2->cf, p2->px, p2->py, p2->pz, h3);
+        p2 = p2->next;
+    }
+
+    return h3;
+}
+
+/* Evaluate polynomial */
+void evaluate(node *head)
+{
+    node *p;
+    int x, y, z;
+    int result = 0;
+
+    printf("\nEnter x, y, z values: ");
+    scanf("%d%d%d", &x, &y, &z);
+
+    p = head->next;
+    while (p != head)
+    {
+        result += p->cf *
+                  pow(x, p->px) *
+                  pow(y, p->py) *
+                  pow(z, p->pz);
+        p = p->next;
+    }
+
+    printf("Polynomial result is: %d\n", result);
+}
+
+/* Main function */
+void main()
+{
+    node *h1, *h2, *h3;
+    int ch;
+
+    h1 = getnode();
+    h2 = getnode();
+    h3 = getnode();
+
+    h1->next = h1;
+    h2->next = h2;
+    h3->next = h3;
+
+    while (1)
+    {
+        printf("\n1. Evaluate polynomial");
+        printf("\n2. Add two polynomials");
+        printf("\n3. Exit");
+        printf("\nEnter your choice: ");
+        scanf("%d", &ch);
+
+        switch (ch)
+        {
+            case 1:
+                h1->next = h1;
+                printf("\nEnter polynomial:\n");
+                h1 = read_poly(h1);
+                printf("Polynomial is: ");
+                display(h1);
+                evaluate(h1);
+                break;
+
+            case 2:
+                h1->next = h1;
+                h2->next = h2;
+                h3->next = h3;
+
+                printf("\nEnter first polynomial:\n");
+                h1 = read_poly(h1);
+
+                printf("\nEnter second polynomial:\n");
+                h2 = read_poly(h2);
+
+                h3 = add_poly(h1, h2, h3);
+
+                printf("\nFirst polynomial: ");
+                display(h1);
+
+                printf("\nSecond polynomial: ");
+                display(h2);
+
+                printf("\nSum of polynomials: ");
+                display(h3);
+                break;
+
+            case 3:
+                exit(0);
+
+            default:
+                printf("Invalid entry\n");
+        }
+    }
+}
+
+</code>
+</div>
+</div>
+
+</div>
+
+<script>
+function parsePolynomial(poly){
+  let terms = {};
+  poly = poly.replace(/\s+/g,'');
+  let parts = poly.match(/[+-]?[^+-]+/g);
+  if(!parts) return null;
+
+  parts.forEach(term=>{
+    let coefMatch = term.match(/^([+-]?\d*)/);
+    let coef = coefMatch[1];
+    coef = coef==''||coef=='+'?1:coef=='-'?-1:parseInt(coef);
+
+    let px=0,py=0,pz=0;
+    (term.match(/[xyz](\^\d+)?/g)||[]).forEach(v=>{
+      let [vr,p]=v.split("^");
+      p=p?parseInt(p):1;
+      if(vr=='x')px=p;
+      if(vr=='y')py=p;
+      if(vr=='z')pz=p;
+    });
+
+    let key=`x^${px}y^${py}z^${pz}`;
+    terms[key]=(terms[key]||0)+coef;
+  });
+  return terms;
+}
+
+function isZero(t){return Object.values(t).every(v=>v===0);}
+
+function formatPoly(t){
+  let out="";
+  for(let k in t){
+    let c=t[k]; if(c==0)continue;
+    let [x,y,z]=k.match(/\d+/g).map(Number);
+    let vars=
+      (x?`x${x>1?'^'+x:''}`:'')+
+      (y?`y${y>1?'^'+y:''}`:'')+
+      (z?`z${z>1?'^'+z:''}`:'');
+    out+=(out&&c>0?" + ":"")+(c<0?"-":"")+Math.abs(c)+vars;
+  }
+  return out||"0";
+}
+
+function evaluate(t,v){
+  let s=0;
+  for(let k in t){
+    let [x,y,z]=k.match(/\d+/g).map(Number);
+    s+=t[k]*
+      Math.pow(v.x||0,x)*
+      Math.pow(v.y||0,y)*
+      Math.pow(v.z||0,z);
+  }
+  return s;
+}
+
+function error(msg){
+  document.getElementById("symbolic").innerText="Invalid Input";
+  document.getElementById("numeric").innerText="Invalid Input";
+  document.getElementById("steps").innerHTML=
+    `<div class="step" style="border-left:5px solid red">
+      <b>Error:</b> ${msg}
+    </div>`;
+}
+
+function solve(type){
+  let steps=document.getElementById("steps");
+  steps.innerHTML="";
+
+  let p1=parsePolynomial(p1Input.value);
+  let p2=parsePolynomial(p2Input.value);
+  if(!p1||!p2){error("Invalid polynomial format");return;}
+  if(isZero(p1)||isZero(p2)){error("Zero polynomial not allowed");return;}
+
+  steps.innerHTML+=`<div class="step"><b>Step 1:</b> Parsed Polynomials</div>`;
+  steps.innerHTML+=`<div class="step">P1 = ${formatPoly(p1)}</div>`;
+  steps.innerHTML+=`<div class="step">P2 = ${formatPoly(p2)}</div>`;
+
+  let res={},keys=new Set([...Object.keys(p1),...Object.keys(p2)]);
+  steps.innerHTML+=`<div class="step"><b>Step 2:</b> ${type==="add"?"Addition":"Subtraction"}</div>`;
+
+  keys.forEach(k=>{
+    let a=p1[k]||0,b=p2[k]||0;
+    res[k]=type==="add"?a+b:a-b;
+    steps.innerHTML+=`<div class="step">${k}: ${a} ${type==="add"?"+":"−"} ${b} = ${res[k]}</div>`;
+  });
+
+  if(isZero(res)){error("Resultant polynomial is zero");return;}
+
+  document.getElementById("symbolic").innerText=formatPoly(res);
+
+  let values={};
+  valuesInput.value.split(",").forEach(p=>{
+    let [k,v]=p.split("="); values[k.trim()]=parseInt(v);
+  });
+
+  steps.innerHTML+=`<div class="step"><b>Step 3:</b> Evaluation</div>`;
+  let val=evaluate(res,values);
+  steps.innerHTML+=`<div class="step"><b>Final Value = ${val}</b></div>`;
+  document.getElementById("numeric").innerText=val;
+}
+
+const p1Input=document.getElementById("p1");
+const p2Input=document.getElementById("p2");
+const valuesInput=document.getElementById("values");
+</script>
+
+</body>
+</html>
